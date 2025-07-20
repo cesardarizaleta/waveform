@@ -40,7 +40,7 @@ const PlaylistWallpaperGenerator: React.FC = () => {
 
       const authString = btoa(`${VITE_SPOTIFY_CLIENT_ID}:${VITE_SPOTIFY_CLIENT_SECRET}`);
 
-      const response = await fetch("http://accounts.spotify.com/api/token", {
+      const response = await fetch("https://accounts.spotify.com/api/token", {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
@@ -79,10 +79,25 @@ const PlaylistWallpaperGenerator: React.FC = () => {
     }
   };
 
-  const extractPlaylistId = (url: string): string | null => {
-    const match = url.match(/spotify\.com\/playlist\/([a-zA-Z0-9]+)/);
-    return match ? match[1] : null;
-  };
+// Inside PlaylistWallpaperGenerator.tsx (or SpectrogramGenerator.tsx)
+
+    const extractPlaylistId = (url: string): string | null => {
+    // Regex for the standard Spotify playlist URL
+    const standardMatch = url.match(/spotify\.com\/playlist\/([a-zA-Z0-9]+)/);
+    if (standardMatch && standardMatch[1]) {
+        return standardMatch[1];
+    }
+
+    // Regex for the new https://open.spotify.com/playlist/5K500zKuy6SFsONMckiAyf?si=3ce9ccb704014fb1 format
+    // This assumes the ID is always exactly after "/playlist/" in this specific type of URL as well.
+    const newFormatMatch = url.match(/http:\/\/googleusercontent\.com\/spotify\.com\/26([a-zA-Z0-9]+)/);
+    if (newFormatMatch && newFormatMatch[1]) {
+        return newFormatMatch[1];
+    }
+
+    // If neither matches, return null
+    return null;
+    };
 
   const fetchPlaylistCovers = async (playlistId: string): Promise<string[]> => {
     setIsLoading(true);
