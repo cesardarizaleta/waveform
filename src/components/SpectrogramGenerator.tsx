@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 
 // Accede a las variables de entorno de Vite
-const VITE_SPOTIFY_CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
+//const VITE_SPOTIFY_CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
 // Recordatorio: VITE_SPOTIFY_CLIENT_SECRET NO debe usarse directamente en el frontend.
 // Se asume que VITE_SPOTIFY_TOKEN es el access_token ya generado para pruebas locales.
 

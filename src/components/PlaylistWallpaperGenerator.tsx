@@ -1,4 +1,4 @@
-import React, { useState, useRef, useLayoutEffect, useEffect } from 'react'; // Added useEffect
+import React, { useState, useRef, useLayoutEffect } from 'react'; // Added useEffect
 
 const VITE_SPOTIFY_CLIENT_ID = import.meta.env.VITE_SPOTIFY_CLIENT_ID;
 // !! WARNING: EXPOSING CLIENT_SECRET IN FRONTEND IS A SEVERE SECURITY RISK !!
@@ -64,9 +64,17 @@ const PlaylistWallpaperGenerator: React.FC = () => {
       console.log("New Spotify access token acquired. Expires in:", expiresIn, "seconds.");
       return newToken;
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error during Spotify token acquisition:", err);
-      setError(`Error al autenticar con Spotify: ${err.message}. ${err.message.includes("CORS") ? "¡Advertencia de CORS! El secreto del cliente no debería estar en el frontend." : ""}`);
+      let message = "Error desconocido";
+      let corsWarning = "";
+      if (typeof err === "object" && err !== null && "message" in err) {
+        message = String((err as { message: string }).message);
+        if (message.includes("CORS")) {
+          corsWarning = "¡Advertencia de CORS! El secreto del cliente no debería estar en el frontend.";
+        }
+      }
+      setError(`Error al autenticar con Spotify: ${message}. ${corsWarning}`);
       return '';
     }
   };
@@ -79,7 +87,7 @@ const PlaylistWallpaperGenerator: React.FC = () => {
   const fetchPlaylistCovers = async (playlistId: string): Promise<string[]> => {
     setIsLoading(true);
     setError(null);
-    let allCoverUrls: string[] = [];
+    const allCoverUrls: string[] = [];
     
     try {
       const accessToken = await getSpotifyAccessToken();
@@ -116,9 +124,21 @@ const PlaylistWallpaperGenerator: React.FC = () => {
         }
 
         const data = await response.json();
-        data.items.forEach((item: any) => {
-          if (item.track && item.track.album && item.track.album.images && item.track.album.images.length > 0) {
-            const imageUrl = item.track.album.images.find((img: any) => img.width === 300 || img.width === 640)?.url || item.track.album.images[0].url;
+        type SpotifyImage = { url: string; width: number; height: number };
+        type SpotifyAlbum = { images: SpotifyImage[] };
+        type SpotifyTrack = { album: SpotifyAlbum };
+        type SpotifyItem = { track: SpotifyTrack };
+
+        data.items.forEach((item: SpotifyItem) => {
+          if (
+            item.track &&
+            item.track.album &&
+            item.track.album.images &&
+            item.track.album.images.length > 0
+          ) {
+            const imageUrl =
+              item.track.album.images.find((img) => img.width === 300 || img.width === 640)?.url ||
+              item.track.album.images[0].url;
             if (imageUrl) {
               allCoverUrls.push(imageUrl);
             }
@@ -127,9 +147,13 @@ const PlaylistWallpaperGenerator: React.FC = () => {
         tracksUrl = data.next;
       }
       return allCoverUrls;
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Error fetching playlist covers:", err);
-      setError(`Error al obtener covers de la playlist: ${err.message}`);
+      let errorMessage = "Error desconocido";
+      if (err && typeof err === "object" && "message" in err) {
+        errorMessage = String((err as { message: string }).message);
+      }
+      setError(`Error al obtener covers de la playlist: ${errorMessage}`);
       return [];
     } finally {
       setIsLoading(false);
@@ -285,7 +309,7 @@ const PlaylistWallpaperGenerator: React.FC = () => {
       const canvas = canvasRef.current;
       const container = containerRef.current;
       if (canvas && container) {
-        let aspectRatio = selectedRatio === 'desktop' ? 16 / 9 : 1 / 2;
+        const aspectRatio = selectedRatio === 'desktop' ? 16 / 9 : 1 / 2;
         
         const maxContainerWidth = container.clientWidth - 40;
         const maxContainerHeight = container.clientHeight - 40;
